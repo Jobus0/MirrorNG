@@ -816,6 +816,12 @@ namespace Mirror.KCP
             uint ts_flush_ = ts_flush;
             int tm_packet = 0x7fffffff;
 
+            if (sendQueue.Count > 300)
+                UnityEngine.Debug.LogWarning("sendQueue is filling up");
+
+            if (receiveQueue.Count > 300)
+                UnityEngine.Debug.LogWarning("receiveQueue is filling up");
+
             if (!updated)
                 return 0;
 
