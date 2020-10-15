@@ -20,7 +20,7 @@ namespace Mirror.KCP
         // then consider us disconnected
         public const int TIMEOUT = 15000;
 
-        volatile uint lastReceived;
+        uint lastReceived;
 
         /// <summary>
         /// Space for CRC64
@@ -37,33 +37,27 @@ namespace Mirror.KCP
         protected void SetupKcp()
         {
             kcp = new Kcp(0, SendWithChecksum);
-            kcp.SetNoDelay();
+            kcp.SetNoDelay(true, 10, 2, true);
+
+            kcp.SetWindowSize(64, 64);
 
             // reserve some space for CRC64
             kcp.ReserveBytes(RESERVED);
-            open = true;
+            lastReceived = kcp.CurrentMS;
 
-            Tick().Forget();
+            open = true;
         }
 
-        async UniTaskVoid Tick()
+        public void Tick()
         {
+            if (!open)
+                return;
+
             try
             {
-                lastReceived = kcp.CurrentMS;
-
-                while (open && kcp.CurrentMS < lastReceived + TIMEOUT)
-                {
-                    kcp.Update();
-
-                    int check = kcp.Check();
-
-                    // call every 10 ms unless check says we can wait longer
-                    if (check < 10)
-                        check = 10;
-
-                    await UniTask.Delay(check);
-                }
+                kcp.Update();
+                if (kcp.CurrentMS < lastReceived + TIMEOUT)
+                    return;
             }
             catch (SocketException)
             {
@@ -77,19 +71,16 @@ namespace Mirror.KCP
             {
                 Debug.LogException(ex);
             }
-            finally
-            {
-                open = false;
-                dataAvailable?.TrySetResult();
-                Dispose();
-            }
+
+            // either a timeout happened or there was an exception
+            open = false;
+            dataAvailable?.TrySetResult();
+            Dispose();
         }
 
         protected virtual void Dispose()
         {
         }
-
-        volatile bool isWaiting = false;
 
         AutoResetUniTaskCompletionSource dataAvailable;
 
@@ -103,7 +94,7 @@ namespace Mirror.KCP
 
             lastReceived = kcp.CurrentMS;
 
-            if (isWaiting && kcp.PeekSize() > 0)
+            if (kcp.PeekSize() > 0)
             {
                 // we just got a full message
                 // Let the receivers know
@@ -145,10 +136,9 @@ namespace Mirror.KCP
             int msgSize = kcp.PeekSize();
 
             while (msgSize < 0 && open) { 
-                isWaiting = true;
                 dataAvailable = AutoResetUniTaskCompletionSource.Create();
                 await dataAvailable.Task;
-                isWaiting = false;
+                dataAvailable = null;
                 msgSize = kcp.PeekSize();
             }
 

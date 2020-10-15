@@ -40,7 +40,23 @@ namespace Mirror.KCP
         EndPoint newClientEP = new IPEndPoint(IPAddress.IPv6Any, 0);
         public void Update()
         {
-            while (socket != null && socket.Poll(0, SelectMode.SelectRead)) {
+            PollIncomingSocket();
+
+            TickKcp();
+        }
+
+        private void TickKcp()
+        {
+            foreach (KcpConnection connection in connectedClients.Values)
+            {
+                connection.Tick();
+            }
+        }
+
+        private void PollIncomingSocket()
+        {
+            while (socket != null && socket.Poll(0, SelectMode.SelectRead))
+            {
                 int msgLength = socket.ReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref newClientEP);
 
                 ReceivedMessageCount++;

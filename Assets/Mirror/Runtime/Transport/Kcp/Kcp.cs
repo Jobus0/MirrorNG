@@ -817,10 +817,10 @@ namespace Mirror.KCP
             int tm_packet = 0x7fffffff;
 
             if (sendQueue.Count > 300)
-                UnityEngine.Debug.LogWarning("sendQueue is filling up");
+                UnityEngine.Debug.LogWarning("sendQueue is filling up " + sendQueue.Count);
 
             if (receiveQueue.Count > 300)
-                UnityEngine.Debug.LogWarning("receiveQueue is filling up");
+                UnityEngine.Debug.LogWarning("receiveQueue is filling up" + receiveQueue.Count);
 
             if (!updated)
                 return 0;
