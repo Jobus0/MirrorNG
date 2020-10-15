@@ -41,6 +41,8 @@ namespace Mirror.KCP
             {
                 while (socket != null)
                 {
+                    kcp.Update();
+
                     while (socket.Poll(0, SelectMode.SelectRead))
                     {
                         int msgLength = socket.ReceiveFrom(buffer, ref remoteEndpoint);
@@ -48,7 +50,7 @@ namespace Mirror.KCP
                     }
 
                     // wait a few MS to poll again
-                    await UniTask.Delay(2);
+                    await UniTask.Delay(20);
                 }
             }
             catch (SocketException)
