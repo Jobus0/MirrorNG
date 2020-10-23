@@ -37,17 +37,17 @@ jobs:
     if: true
     steps:
   
+      - name: Activate license
+        uses: MirrorNG/unity-runner@3.0.0
+        with:
+          entrypoint: /activate.sh
+
       # Checkout repository (required to test local actions)
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-        
-      - name: Activate license
-        uses: MirrorNG/unity-runner@3.0.0
-        with:
-          entrypoint: /activate.sh
-          
+                  
       - name: Generate Solution
         uses: MirrorNG/unity-runner@3.0.0
         with:
